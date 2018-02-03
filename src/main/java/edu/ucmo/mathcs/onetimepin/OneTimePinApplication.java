@@ -35,7 +35,7 @@ public class OneTimePinApplication {
 
 		for (int i = 0; i < 6; i++) {
 			digit = rand.nextInt(10);
-			pin = pin + digit;
+			pin += digit;
 		}
 
 		return pin;
