@@ -12,9 +12,7 @@ import java.util.Random;
 public class OneTimePinApplication {
 
 	public static void main(String[] args) {
-		System.out.println("IP Address: " + getIPAddress());
-		System.out.println("PIN: " + getPIN());
-		System.out.println("Timestamp: " + getTimestamp());
+		SpringApplication.run(OneTimePinApplication.class, args);
 	}
 
 	public static String getIPAddress() {
