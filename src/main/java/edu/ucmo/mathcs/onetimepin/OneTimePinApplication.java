@@ -10,38 +10,9 @@ import java.util.Random;
 
 @SpringBootApplication
 public class OneTimePinApplication {
-
+	
 	public static void main(String[] args) {
 		SpringApplication.run(OneTimePinApplication.class, args);
 	}
-
-	public static String getIPAddress() {
-		InetAddress ip = null;
-		try {
-			ip = InetAddress.getLocalHost();
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		}
-
-		return ip.getHostAddress();
-	}
-
-	public static String getPIN() {
-		int digit = 0;
-		Random rand = new Random();
-		String pin = "";
-
-		for (int i = 0; i < 6; i++) {
-			digit = rand.nextInt(10);
-			pin += digit;
-		}
-
-		return pin;
-	}
-
-	public static Timestamp getTimestamp() {
-		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-
-		return timestamp;
-	}
+	
 }

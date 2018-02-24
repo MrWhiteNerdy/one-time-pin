@@ -1,14 +1,12 @@
 package edu.ucmo.mathcs.onetimepin;
 
-import org.hibernate.annotations.CreationTimestamp;
-
 import javax.persistence.*;
 import java.util.Date;
 
 @Entity
 @Table(name = "otp_pins")
 public class Pin {
-
+	
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private Long oid;
@@ -19,7 +17,6 @@ public class Pin {
 	private String pin;
 	
 	@Temporal(TemporalType.TIMESTAMP)
-	@CreationTimestamp
 	private Date createTimestamp;
 	
 	private String createIp;
