@@ -8,7 +8,14 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 
 import static edu.ucmo.mathcs.onetimepin.Utils.generatePin;
-import java.sql.*;
+
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.util.Date;
+
 
 @Controller
 @RequestMapping(path = "/api")
@@ -32,5 +39,21 @@ public class PinController {
 
         return "{\"pin\":" + pin.getPin() + "}";
 	}
-
+	@PostMapping(path = "/claim")
+	public @ResponseBody String claimPin(@RequestBody String acct, @RequestBody String pin, HttpServletRequest request) {
+		Pin inAcct = repository.findPinByAccount(acct);
+		Date curDate = new Date();
+		if(inAcct.getPin().equals(pin)) { // Requested pin is valid for this account
+			if(inAcct.getExpireTimestamp().before(curDate)) { // Expire time is before the current time.
+				inAcct.setClaimTimestamp(curDate);
+				inAcct.setClaimIp(request.getRemoteAddr());
+				repository.save(inAcct);
+				return "Claim successful";
+			}
+			else
+				return "The requested pin was valid but has expired.";
+		}
+		else
+			return "The requested pin was invalid";
+	}
 }
