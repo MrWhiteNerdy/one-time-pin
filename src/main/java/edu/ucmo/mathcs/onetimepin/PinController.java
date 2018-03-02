@@ -2,6 +2,7 @@ package edu.ucmo.mathcs.onetimepin;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -14,7 +15,7 @@ public class PinController {
 	@Autowired
 	private PinRepository repository;
 	
-	@PostMapping(path = "/generate")
+	@PostMapping(path = "/generate", produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody
 	String addPin(@RequestParam(required = false) String account, HttpServletRequest request) {
 		if (account == null) return "{\"error\":\"account is required\"}";
@@ -35,12 +36,12 @@ public class PinController {
 		pin.setCreateTimestamp(Utils.getCurrentDate());
 		pin.setExpireTimestamp(Utils.getExpireDate());
 		
-		repository.save(pin);
+		Pin newPin = repository.save(pin);
 		
-		return "{\"pin\":" + pin.getPin() + "}";
+		return "{\"pin\":" + newPin.getPin() + "}";
 	}
 	
-	@PostMapping(path = "/claim")
+	@PostMapping(path = "/claim", produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody
 	String claimPin(@RequestBody String acct, @RequestBody String pin, HttpServletRequest request) {
 		Pin inAcct = repository.findPinByAccount(acct);
