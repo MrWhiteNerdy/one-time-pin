@@ -17,14 +17,12 @@ public class PinController {
 	
 	@PostMapping(path = "/generate", produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody
-	String addPin(@RequestParam(required = false) String account, HttpServletRequest request) {
-		if (account == null) return "{\"error\":\"account is required\"}";
+	String addPin(@RequestBody(required = false) Pin pin, HttpServletRequest request) {
+		if (pin == null || pin.getAccount() == null) return "{\"error\":\"account is required\"}";
 		
-		if (account.equals("")) return "{\"error\":\"invalid account\"}";
+		if (pin.getAccount().equals("")) return "{\"error\":\"invalid account\"}";
 		
-		Pin pin = new Pin();
-		pin.setAccount(account);
-		pin.setCreateUser(account);
+		pin.setCreateUser(pin.getAccount());
 		pin.setCreateIp(request.getRemoteAddr());
 		
 		try {
@@ -36,9 +34,9 @@ public class PinController {
 		pin.setCreateTimestamp(Utils.getCurrentDate());
 		pin.setExpireTimestamp(Utils.getExpireDate());
 		
-		Pin newPin = repository.save(pin);
+		Pin returnPin = repository.save(pin);
 		
-		return "{\"pin\":" + newPin.getPin() + "}";
+		return "{\"pin\":" + returnPin.getPin() + "}";
 	}
 	
 	@PostMapping(path = "/claim", produces = MediaType.APPLICATION_JSON_VALUE)

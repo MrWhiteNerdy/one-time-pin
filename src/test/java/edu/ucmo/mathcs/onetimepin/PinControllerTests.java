@@ -33,6 +33,7 @@ public class PinControllerTests {
 	public void testGeneratePinWithNoAccount() throws Exception {
 		RequestBuilder requestBuilder = MockMvcRequestBuilders
 				.post("/api/generate")
+				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON);
 		
 		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
@@ -45,7 +46,9 @@ public class PinControllerTests {
 	@Test
 	public void testGeneratePinWithInvalidAccount() throws Exception {
 		RequestBuilder requestBuilder = MockMvcRequestBuilders
-				.post("/api/generate?account=")
+				.post("/api/generate")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"account\": \"\"}")
 				.accept(MediaType.APPLICATION_JSON);
 		
 		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
@@ -63,9 +66,10 @@ public class PinControllerTests {
 		when(repository.save(any(Pin.class))).thenReturn(pin);
 		
 		RequestBuilder requestBuilder = MockMvcRequestBuilders
-				.post("/api/generate?account=testing")
-				.accept(MediaType.APPLICATION_JSON)
-				.contentType(MediaType.APPLICATION_JSON);
+				.post("/api/generate")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"account\": \"testing\"}")
+				.accept(MediaType.APPLICATION_JSON);
 		
 		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
 		
