@@ -15,6 +15,8 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import java.util.*;
+
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
@@ -44,7 +46,7 @@ public class PinControllerTests {
 	}
 	
 	@Test
-	public void testGeneratePinWithInvalidAccount() throws Exception {
+	public void testGeneratePinWithEmptyAccount() throws Exception {
 		RequestBuilder requestBuilder = MockMvcRequestBuilders
 				.post("/api/generate")
 				.contentType(MediaType.APPLICATION_JSON)
@@ -81,5 +83,158 @@ public class PinControllerTests {
 		
 		JSONAssert.assertEquals(expected, response.getContentAsString(), false);
 	}
-	
+	@Test
+	public void testClaimPinWithNoAccount() throws Exception {
+		RequestBuilder requestBuilder = MockMvcRequestBuilders
+				.post("/api/claim")
+				.contentType(MediaType.APPLICATION_JSON)
+				.accept(MediaType.APPLICATION_JSON);
+
+		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
+
+		String expected = "{\"error\":\"account is required\"}";
+
+		JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
+	}
+
+	@Test
+	public void testClaimPinWithEmptyAccount() throws Exception {
+		RequestBuilder requestBuilder = MockMvcRequestBuilders
+				.post("/api/claim")
+				.accept(MediaType.APPLICATION_JSON)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"account\": \"\"}");
+
+		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
+
+		String expected = "{\"error\":\"empty account\"}";
+
+		JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
+	}
+
+	@Test
+	public void testClaimPinWithNoPin() throws Exception {
+		RequestBuilder requestBuilder = MockMvcRequestBuilders
+				.post("/api/claim")
+				.accept(MediaType.APPLICATION_JSON)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"account\": \"testing\"}");
+
+		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
+
+		String expected = "{\"error\":\"pin is required\"}";
+
+		JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
+	}
+
+	@Test
+	public void testClaimPinWithEmptyPin() throws Exception {
+		RequestBuilder requestBuilder = MockMvcRequestBuilders
+				.post("/api/claim?account=testing&pin=")
+				.accept(MediaType.APPLICATION_JSON)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"account\": \"testing\", \"pin\": \"\"}");
+
+		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
+
+		String expected = "{\"error\":\"empty pin\"}";
+
+		JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
+	}
+
+	@Test
+	public void testClaimPinWithInvalidPin() throws Exception {
+		ArrayList<Pin> pins = new ArrayList<>();
+		pins.add(new Pin("testing", "123456"));
+
+		when(repository.findPinsByAccount("testing")).thenReturn(pins);
+
+		RequestBuilder requestBuilder = MockMvcRequestBuilders
+				.post("/api/claim")
+				.accept(MediaType.APPLICATION_JSON)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"account\": \"testing\", \"pin\": \"123457\"}");
+
+		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
+
+		String expected = "{\"error\":\"The requested pin was invalid\"}";
+
+		JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
+	}
+
+	@Test
+	public void testClaimPinPastExpirationDate() throws Exception {
+		Calendar c = Calendar.getInstance();
+		c.setTime(new Date());
+		c.add(Calendar.YEAR, -1);
+		ArrayList<Pin> pins = new ArrayList<>();
+		Pin pin = new Pin("testing", "123456");
+		pin.setExpireTimestamp(c.getTime());
+		pins.add(pin);
+
+		when(repository.findPinsByAccount("testing")).thenReturn(pins);
+
+		RequestBuilder requestBuilder = MockMvcRequestBuilders
+				.post("/api/claim")
+				.accept(MediaType.APPLICATION_JSON)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"account\": \"testing\", \"pin\": \"123456\"}");
+
+		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
+
+		String expected = "{\"error\":\"The requested pin was valid but has expired\"}";
+
+		JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
+	}
+
+	@Test
+	public void testClaimPinThatHasBeenClaimed() throws Exception {
+		Calendar c = Calendar.getInstance();
+		c.setTime(new Date());
+		c.add(Calendar.YEAR, 1);
+		ArrayList<Pin> pins = new ArrayList<>();
+		Pin pin = new Pin("testing", "123456");
+		pin.setExpireTimestamp(c.getTime());
+		pin.setClaimIp("1010101");
+
+		pins.add(pin);
+		when(repository.findPinsByAccount("testing")).thenReturn(pins);
+
+		RequestBuilder requestBuilder = MockMvcRequestBuilders
+				.post("/api/claim")
+				.accept(MediaType.APPLICATION_JSON)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"account\": \"testing\", \"pin\": \"123456\"}");
+
+		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
+
+		String expected = "{\"error\":\"The requested pin has already been claimed\"}";
+
+		JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
+	}
+
+	@Test
+	public void testClaimPinWithValidValues() throws Exception {
+		Calendar c = Calendar.getInstance();
+		c.setTime(new Date());
+		c.add(Calendar.YEAR, 1);
+		ArrayList<Pin> pins = new ArrayList<>();
+		Pin pin = new Pin("testing", "123456");
+		pin.setExpireTimestamp(c.getTime());
+
+		pins.add(pin);
+		when(repository.findPinsByAccount("testing")).thenReturn(pins);
+
+		RequestBuilder requestBuilder = MockMvcRequestBuilders
+				.post("/api/claim")
+				.accept(MediaType.APPLICATION_JSON)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"account\": \"testing\", \"pin\": \"123456\"}");
+
+		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
+
+		String expected = "{\"success\":\"The pin has been successfully claimed\"}";
+
+		JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
+	}
 }
