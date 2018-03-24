@@ -2,6 +2,7 @@ package edu.ucmo.mathcs.onetimepin;
 
 import javax.persistence.*;
 import java.util.Date;
+import java.util.Objects;
 
 @Entity
 @Table(name = "otp_pins")
@@ -32,6 +33,13 @@ public class Pin {
 	private String claimUser;
 	
 	private String claimIp;
+
+	Pin(String account, String pin/*, String createUser*/) {
+		this.account = account;
+		this.pin = pin;
+		//this.createUser = createUser;
+	}
+	Pin() {}
 	
 	public Long getOid() {
 		return oid;
@@ -112,5 +120,16 @@ public class Pin {
 	public void setClaimIp(String claimIp) {
 		this.claimIp = claimIp;
 	}
-	
+
+	@Override public boolean equals(Object inputPin) {
+		if(inputPin != null && inputPin instanceof Pin)
+			return ((Pin) inputPin).pin.equals(this.pin);
+		else
+			return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(pin);
+	}
 }
