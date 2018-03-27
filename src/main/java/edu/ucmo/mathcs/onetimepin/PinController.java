@@ -50,6 +50,8 @@ public class PinController {
 
         if(pin.getPin().equals("")) return "{\"error\":\"empty pin\"}";        // Make sure they input something for the pin
 
+        if (!Utils.luhnCheck(pin.getPin())) return "{\"error\":\"pin not in correct format\"}";
+
 		List<Pin> inAcct = repository.findPinsByAccount(pin.getAccount());
 		Date curDate = new Date();
 

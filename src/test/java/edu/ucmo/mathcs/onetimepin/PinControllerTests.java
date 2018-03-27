@@ -24,6 +24,9 @@ import static org.mockito.Mockito.when;
 @RunWith(SpringRunner.class)
 @WebMvcTest(value = PinController.class, secure = false)
 public class PinControllerTests {
+
+    private static String GENERATE_ENDPOINT = "/api/generate";
+    private static String CLAIM_ENDPOINT = "/api/claim";
 	
 	@Autowired
 	private MockMvc mockMvc;
@@ -34,7 +37,7 @@ public class PinControllerTests {
 	@Test
 	public void testGeneratePinWithNoAccount() throws Exception {
 		RequestBuilder requestBuilder = MockMvcRequestBuilders
-				.post("/api/generate")
+				.post(GENERATE_ENDPOINT)
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON);
 		
@@ -48,7 +51,7 @@ public class PinControllerTests {
 	@Test
 	public void testGeneratePinWithEmptyAccount() throws Exception {
 		RequestBuilder requestBuilder = MockMvcRequestBuilders
-				.post("/api/generate")
+				.post(GENERATE_ENDPOINT)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"account\": \"\"}")
 				.accept(MediaType.APPLICATION_JSON);
@@ -68,7 +71,7 @@ public class PinControllerTests {
 		when(repository.save(any(Pin.class))).thenReturn(pin);
 		
 		RequestBuilder requestBuilder = MockMvcRequestBuilders
-				.post("/api/generate")
+				.post(GENERATE_ENDPOINT)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"account\": \"testing\"}")
 				.accept(MediaType.APPLICATION_JSON);
@@ -86,7 +89,7 @@ public class PinControllerTests {
 	@Test
 	public void testClaimPinWithNoAccount() throws Exception {
 		RequestBuilder requestBuilder = MockMvcRequestBuilders
-				.post("/api/claim")
+				.post(CLAIM_ENDPOINT)
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON);
 
@@ -100,7 +103,7 @@ public class PinControllerTests {
 	@Test
 	public void testClaimPinWithEmptyAccount() throws Exception {
 		RequestBuilder requestBuilder = MockMvcRequestBuilders
-				.post("/api/claim")
+				.post(CLAIM_ENDPOINT)
 				.accept(MediaType.APPLICATION_JSON)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"account\": \"\"}");
@@ -115,7 +118,7 @@ public class PinControllerTests {
 	@Test
 	public void testClaimPinWithNoPin() throws Exception {
 		RequestBuilder requestBuilder = MockMvcRequestBuilders
-				.post("/api/claim")
+				.post(CLAIM_ENDPOINT)
 				.accept(MediaType.APPLICATION_JSON)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"account\": \"testing\"}");
@@ -130,7 +133,7 @@ public class PinControllerTests {
 	@Test
 	public void testClaimPinWithEmptyPin() throws Exception {
 		RequestBuilder requestBuilder = MockMvcRequestBuilders
-				.post("/api/claim?account=testing&pin=")
+				.post(CLAIM_ENDPOINT)
 				.accept(MediaType.APPLICATION_JSON)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"account\": \"testing\", \"pin\": \"\"}");
@@ -142,6 +145,21 @@ public class PinControllerTests {
 		JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
 	}
 
+    @Test
+    public void testClaimPinWithIncorrectFormattedPin() throws Exception {
+        RequestBuilder requestBuilder = MockMvcRequestBuilders
+                .post(CLAIM_ENDPOINT)
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"account\": \"testing\", \"pin\": \"932716\"}");
+
+        MvcResult result = mockMvc.perform(requestBuilder).andReturn();
+
+        String expected = "{\"error\":\"pin not in correct format\"}";
+
+        JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
+    }
+
 	@Test
 	public void testClaimPinWithInvalidPin() throws Exception {
 		ArrayList<Pin> pins = new ArrayList<>();
@@ -150,10 +168,10 @@ public class PinControllerTests {
 		when(repository.findPinsByAccount("testing")).thenReturn(pins);
 
 		RequestBuilder requestBuilder = MockMvcRequestBuilders
-				.post("/api/claim")
+				.post(CLAIM_ENDPOINT)
 				.accept(MediaType.APPLICATION_JSON)
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"account\": \"testing\", \"pin\": \"123457\"}");
+				.content("{\"account\": \"testing\", \"pin\": \"932715\"}");
 
 		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
 
@@ -168,17 +186,17 @@ public class PinControllerTests {
 		c.setTime(new Date());
 		c.add(Calendar.YEAR, -1);
 		ArrayList<Pin> pins = new ArrayList<>();
-		Pin pin = new Pin("testing", "123456");
+		Pin pin = new Pin("testing", "932715");
 		pin.setExpireTimestamp(c.getTime());
 		pins.add(pin);
 
 		when(repository.findPinsByAccount("testing")).thenReturn(pins);
 
 		RequestBuilder requestBuilder = MockMvcRequestBuilders
-				.post("/api/claim")
+				.post(CLAIM_ENDPOINT)
 				.accept(MediaType.APPLICATION_JSON)
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"account\": \"testing\", \"pin\": \"123456\"}");
+				.content("{\"account\": \"testing\", \"pin\": \"932715\"}");
 
 		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
 
@@ -193,7 +211,7 @@ public class PinControllerTests {
 		c.setTime(new Date());
 		c.add(Calendar.YEAR, 1);
 		ArrayList<Pin> pins = new ArrayList<>();
-		Pin pin = new Pin("testing", "123456");
+		Pin pin = new Pin("testing", "932715");
 		pin.setExpireTimestamp(c.getTime());
 		pin.setClaimIp("1010101");
 
@@ -201,10 +219,10 @@ public class PinControllerTests {
 		when(repository.findPinsByAccount("testing")).thenReturn(pins);
 
 		RequestBuilder requestBuilder = MockMvcRequestBuilders
-				.post("/api/claim")
+				.post(CLAIM_ENDPOINT)
 				.accept(MediaType.APPLICATION_JSON)
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"account\": \"testing\", \"pin\": \"123456\"}");
+				.content("{\"account\": \"testing\", \"pin\": \"932715\"}");
 
 		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
 
@@ -219,17 +237,17 @@ public class PinControllerTests {
 		c.setTime(new Date());
 		c.add(Calendar.YEAR, 1);
 		ArrayList<Pin> pins = new ArrayList<>();
-		Pin pin = new Pin("testing", "123456");
+		Pin pin = new Pin("testing", "932715");
 		pin.setExpireTimestamp(c.getTime());
 
 		pins.add(pin);
 		when(repository.findPinsByAccount("testing")).thenReturn(pins);
 
 		RequestBuilder requestBuilder = MockMvcRequestBuilders
-				.post("/api/claim")
+				.post(CLAIM_ENDPOINT)
 				.accept(MediaType.APPLICATION_JSON)
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"account\": \"testing\", \"pin\": \"123456\"}");
+				.content("{\"account\": \"testing\", \"pin\": \"932715\"}");
 
 		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
 
