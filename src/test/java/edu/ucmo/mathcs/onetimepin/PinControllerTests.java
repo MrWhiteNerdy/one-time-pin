@@ -1,5 +1,7 @@
 package edu.ucmo.mathcs.onetimepin;
 
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.skyscreamer.jsonassert.JSONAssert;
@@ -9,27 +11,47 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.restdocs.JUnitRestDocumentation;
+import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
 import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
+import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
+import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(value = PinController.class, secure = false)
 public class PinControllerTests {
 
+	@Rule
+	public final JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
+
+	private MockMvc mockMvc;
+
+	@Autowired
+	private WebApplicationContext context;
+
+	@Before
+	public void setup() {
+		this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
+				.apply(documentationConfiguration(this.restDocumentation)).build();
+	}
+
     private static String GENERATE_ENDPOINT = "/api/generate";
     private static String CLAIM_ENDPOINT = "/api/claim";
-	
-	@Autowired
-	private MockMvc mockMvc;
 	
 	@MockBean
 	private PinRepository repository;
@@ -40,9 +62,15 @@ public class PinControllerTests {
 				.post(GENERATE_ENDPOINT)
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON);
-		
-		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
-		
+
+		MvcResult result = mockMvc.perform(requestBuilder)
+				.andDo(document("generate-failure",
+						responseFields(
+						        fieldWithPath("error")
+								.type(JsonFieldType.STRING)
+								.description("The error message"))))
+				.andReturn();
+
 		String expected = "{\"error\":\"account is required\"}";
 		
 		JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
@@ -75,15 +103,26 @@ public class PinControllerTests {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"account\": \"testing\"}")
 				.accept(MediaType.APPLICATION_JSON);
-		
-		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
-		
+
+		MvcResult result = mockMvc.perform(requestBuilder)
+				.andDo(document("generate-success",
+                        requestFields(
+                                fieldWithPath("account")
+								.type(JsonFieldType.STRING)
+								.description("The account to link to the generated pin"))))
+				.andDo(document("generate-success",
+						responseFields(
+						        fieldWithPath("pin")
+								.type(JsonFieldType.STRING)
+								.description("The generated pin"))))
+				.andReturn();
+
 		MockHttpServletResponse response = result.getResponse();
 		
 		assertEquals(HttpStatus.OK.value(), response.getStatus());
-		
-		String expected = "{\"pin\":123456}";
-		
+
+		String expected = "{\"pin\":\"123456\"}";
+
 		JSONAssert.assertEquals(expected, response.getContentAsString(), false);
 	}
 	@Test
@@ -198,7 +237,22 @@ public class PinControllerTests {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"account\": \"testing\", \"pin\": \"932715\"}");
 
-		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
+		MvcResult result = mockMvc.perform(requestBuilder)
+				.andDo(document("claim-success",
+						requestFields(
+						        fieldWithPath("account")
+								.type(JsonFieldType.STRING)
+								.description("The account used to generate the pin"),
+								fieldWithPath("pin")
+								.type(JsonFieldType.STRING)
+								.description("The expired pin that was generated"))
+						))
+				.andDo(document("claim-failure",
+						responseFields(
+						        fieldWithPath("error")
+								.type(JsonFieldType.STRING)
+								.description("The error message"))))
+				.andReturn();
 
 		String expected = "{\"error\":\"The requested pin was valid but has expired\"}";
 
@@ -249,7 +303,22 @@ public class PinControllerTests {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"account\": \"testing\", \"pin\": \"932715\"}");
 
-		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
+		MvcResult result = mockMvc.perform(requestBuilder)
+				.andDo(document("claim",
+						requestFields(
+								fieldWithPath("account")
+								.type(JsonFieldType.STRING)
+								.description("The account used to generate the pin"),
+								fieldWithPath("pin")
+								.type(JsonFieldType.STRING)
+								.description("The pin that was generated"))
+						))
+				.andDo(document("claim",
+						responseFields(
+						        fieldWithPath("success")
+								.type(JsonFieldType.STRING)
+								.description("The success message"))))
+				.andReturn();
 
 		String expected = "{\"success\":\"The pin has been successfully claimed\"}";
 

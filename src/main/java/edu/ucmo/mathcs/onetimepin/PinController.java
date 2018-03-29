@@ -36,7 +36,7 @@ public class PinController {
 		
 		Pin returnPin = repository.save(pin);
 		
-		return "{\"pin\":" + returnPin.getPin() + "}";
+		return "{\"pin\":\"" + returnPin.getPin() + "\"}";
 	}
 	
 	@PostMapping(path = "/claim", produces = MediaType.APPLICATION_JSON_VALUE)

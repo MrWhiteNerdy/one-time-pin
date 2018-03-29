@@ -1,0 +1,13 @@
+= One Time Pin Documentation
+
+== Generate Pin Success
+operation::generate-success[]
+
+== Generate Pin Failure
+operation::generate-failure[]
+
+== Claim Pin Success
+operation::claim-success[]
+
+== Claim Pin Failure
+operation::claim-failure[]
