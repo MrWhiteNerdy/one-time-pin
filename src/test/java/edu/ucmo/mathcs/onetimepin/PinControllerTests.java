@@ -21,16 +21,16 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
-import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
-import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
-import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(value = PinController.class, secure = false)
@@ -63,13 +63,7 @@ public class PinControllerTests {
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON);
 
-		MvcResult result = mockMvc.perform(requestBuilder)
-				.andDo(document("generate-failure",
-						responseFields(
-						        fieldWithPath("error")
-								.type(JsonFieldType.STRING)
-								.description("The error message"))))
-				.andReturn();
+		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
 
 		String expected = "{\"error\":\"account is required\"}";
 		
@@ -145,7 +139,7 @@ public class PinControllerTests {
 				.accept(MediaType.APPLICATION_JSON);
 
 		MvcResult result = mockMvc.perform(requestBuilder)
-				.andDo(document("generate-success",
+				.andDo(document("generate",
 						requestFields(
 								fieldWithPath("account")
 										.type(JsonFieldType.STRING)
@@ -153,7 +147,7 @@ public class PinControllerTests {
 								fieldWithPath("createUser")
 										.type(JsonFieldType.STRING)
 										.description("The creating user to link to the generated pin"))))
-				.andDo(document("generate-success",
+				.andDo(document("generate",
 						responseFields(
 								fieldWithPath("pin")
 										.type(JsonFieldType.STRING)
@@ -168,7 +162,6 @@ public class PinControllerTests {
 		String expected = "{\"pin\":\"123456\"}";
 
 		JSONAssert.assertEquals(expected, response.getContentAsString(), false);
-
 	}
 
 	@Test
@@ -408,4 +401,5 @@ public class PinControllerTests {
 
 		JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
 	}
+	
 }
