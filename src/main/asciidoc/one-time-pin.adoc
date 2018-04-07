@@ -1,0 +1,8 @@
+= One Time Pin Documentation
+:toc: left
+
+== Generate Pin
+operation::generate[]
+
+== Claim Pin
+operation::claim[]
