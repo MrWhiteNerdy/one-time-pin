@@ -92,7 +92,7 @@ public class PinControllerTests {
 	}
 	
 	@Test
-	public void testGeneratePinWithValidAccount() throws Exception {
+	public void testGeneratePinWithValidAccountAndNoCreateUser() throws Exception {
 		Pin pin = new Pin();
 		pin.setPin("123456");
 		
@@ -104,27 +104,73 @@ public class PinControllerTests {
 				.content("{\"account\": \"testing\"}")
 				.accept(MediaType.APPLICATION_JSON);
 
+		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
+
+		String expected = "{\"error\":\"create user is required\"}";
+
+		JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
+	}
+
+	@Test
+	public void testGeneratePinWithValidAccountAndEmptyCreateUser() throws Exception {
+		Pin pin = new Pin();
+		pin.setPin("123456");
+
+		when(repository.save(any(Pin.class))).thenReturn(pin);
+
+		RequestBuilder requestBuilder = MockMvcRequestBuilders
+				.post(GENERATE_ENDPOINT)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"account\": \"testing\", \"createUser\": \"\"}")
+				.accept(MediaType.APPLICATION_JSON);
+
+		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
+
+		String expected = "{\"error\":\"empty create user\"}";
+
+		JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
+	}
+
+	@Test
+	public void testGeneratePinWithValidAccountAndValidCreateUser() throws Exception {
+		Pin pin = new Pin();
+		pin.setPin("123456");
+
+		when(repository.save(any(Pin.class))).thenReturn(pin);
+
+		RequestBuilder requestBuilder = MockMvcRequestBuilders
+				.post(GENERATE_ENDPOINT)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"account\": \"testing\", \"createUser\": \"test user\"}")
+				.accept(MediaType.APPLICATION_JSON);
+
 		MvcResult result = mockMvc.perform(requestBuilder)
 				.andDo(document("generate-success",
-                        requestFields(
-                                fieldWithPath("account")
-								.type(JsonFieldType.STRING)
-								.description("The account to link to the generated pin"))))
+						requestFields(
+								fieldWithPath("account")
+										.type(JsonFieldType.STRING)
+										.description("The account to link to the generated pin"),
+								fieldWithPath("createUser")
+										.type(JsonFieldType.STRING)
+										.description("The creating user to link to the generated pin"))))
 				.andDo(document("generate-success",
 						responseFields(
-						        fieldWithPath("pin")
-								.type(JsonFieldType.STRING)
-								.description("The generated pin"))))
+								fieldWithPath("pin")
+										.type(JsonFieldType.STRING)
+										.description("The generated pin"))))
 				.andReturn();
 
+
 		MockHttpServletResponse response = result.getResponse();
-		
+
 		assertEquals(HttpStatus.OK.value(), response.getStatus());
 
 		String expected = "{\"pin\":\"123456\"}";
 
 		JSONAssert.assertEquals(expected, response.getContentAsString(), false);
+
 	}
+
 	@Test
 	public void testClaimPinWithNoAccount() throws Exception {
 		RequestBuilder requestBuilder = MockMvcRequestBuilders
@@ -190,7 +236,7 @@ public class PinControllerTests {
                 .post(CLAIM_ENDPOINT)
                 .accept(MediaType.APPLICATION_JSON)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"account\": \"testing\", \"pin\": \"932716\"}");
+                .content("{\"account\": \"testing\", \"pin\": \"932716\", \"claimUser\":\"test claim\"}");
 
         MvcResult result = mockMvc.perform(requestBuilder).andReturn();
 
@@ -210,7 +256,7 @@ public class PinControllerTests {
 				.post(CLAIM_ENDPOINT)
 				.accept(MediaType.APPLICATION_JSON)
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"account\": \"testing\", \"pin\": \"932715\"}");
+				.content("{\"account\": \"testing\", \"pin\": \"932715\", \"claimUser\":\"test claim\"}");
 
 		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
 
@@ -235,24 +281,9 @@ public class PinControllerTests {
 				.post(CLAIM_ENDPOINT)
 				.accept(MediaType.APPLICATION_JSON)
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"account\": \"testing\", \"pin\": \"932715\"}");
+				.content("{\"account\": \"testing\", \"pin\": \"932715\", \"claimUser\":\"test claim\"}");
 
-		MvcResult result = mockMvc.perform(requestBuilder)
-				.andDo(document("claim-success",
-						requestFields(
-						        fieldWithPath("account")
-								.type(JsonFieldType.STRING)
-								.description("The account used to generate the pin"),
-								fieldWithPath("pin")
-								.type(JsonFieldType.STRING)
-								.description("The expired pin that was generated"))
-						))
-				.andDo(document("claim-failure",
-						responseFields(
-						        fieldWithPath("error")
-								.type(JsonFieldType.STRING)
-								.description("The error message"))))
-				.andReturn();
+		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
 
 		String expected = "{\"error\":\"The requested pin was valid but has expired\"}";
 
@@ -276,11 +307,61 @@ public class PinControllerTests {
 				.post(CLAIM_ENDPOINT)
 				.accept(MediaType.APPLICATION_JSON)
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"account\": \"testing\", \"pin\": \"932715\"}");
+				.content("{\"account\": \"testing\", \"pin\": \"932715\", \"claimUser\":\"test claim\"}");
 
 		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
 
 		String expected = "{\"error\":\"The requested pin has already been claimed\"}";
+
+		JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
+	}
+
+	@Test
+	public void testClaimPinWithNoClaimUser() throws Exception {
+		Calendar c = Calendar.getInstance();
+		c.setTime(new Date());
+		c.add(Calendar.YEAR, 1);
+		ArrayList<Pin> pins = new ArrayList<>();
+		Pin pin = new Pin("testing", "932715");
+		pin.setExpireTimestamp(c.getTime());
+
+		pins.add(pin);
+		when(repository.findPinsByAccount("testing")).thenReturn(pins);
+
+		RequestBuilder requestBuilder = MockMvcRequestBuilders
+				.post(CLAIM_ENDPOINT)
+				.accept(MediaType.APPLICATION_JSON)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"account\": \"testing\", \"pin\": \"932715\"}");
+
+		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
+
+		String expected = "{\"error\":\"claim user is required\"}";
+
+		JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
+	}
+
+	@Test
+	public void testClaimPinWithEmptyClaimUser() throws Exception {
+		Calendar c = Calendar.getInstance();
+		c.setTime(new Date());
+		c.add(Calendar.YEAR, 1);
+		ArrayList<Pin> pins = new ArrayList<>();
+		Pin pin = new Pin("testing", "932715");
+		pin.setExpireTimestamp(c.getTime());
+
+		pins.add(pin);
+		when(repository.findPinsByAccount("testing")).thenReturn(pins);
+
+		RequestBuilder requestBuilder = MockMvcRequestBuilders
+				.post(CLAIM_ENDPOINT)
+				.accept(MediaType.APPLICATION_JSON)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"account\": \"testing\", \"pin\": \"932715\", \"claimUser\":\"\"}");
+
+		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
+
+		String expected = "{\"error\":\"empty claim user\"}";
 
 		JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
 	}
@@ -301,7 +382,7 @@ public class PinControllerTests {
 				.post(CLAIM_ENDPOINT)
 				.accept(MediaType.APPLICATION_JSON)
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"account\": \"testing\", \"pin\": \"932715\"}");
+				.content("{\"account\": \"testing\", \"pin\": \"932715\", \"claimUser\":\"test claim\"}");
 
 		MvcResult result = mockMvc.perform(requestBuilder)
 				.andDo(document("claim",
@@ -311,7 +392,10 @@ public class PinControllerTests {
 								.description("The account used to generate the pin"),
 								fieldWithPath("pin")
 								.type(JsonFieldType.STRING)
-								.description("The pin that was generated"))
+								.description("The pin that was generated"),
+								fieldWithPath("claimUser")
+								.type(JsonFieldType.STRING)
+								.description("The user who is claiming the pin"))
 						))
 				.andDo(document("claim",
 						responseFields(
