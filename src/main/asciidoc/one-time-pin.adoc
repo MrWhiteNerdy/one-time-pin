@@ -1,13 +1,8 @@
 = One Time Pin Documentation
+:toc: left
 
-== Generate Pin Success
-operation::generate-success[]
+== Generate Pin
+operation::generate[]
 
-== Generate Pin Failure
-operation::generate-failure[]
-
-== Claim Pin Success
-operation::claim-success[]
-
-== Claim Pin Failure
-operation::claim-failure[]
+== Claim Pin
+operation::claim[]
