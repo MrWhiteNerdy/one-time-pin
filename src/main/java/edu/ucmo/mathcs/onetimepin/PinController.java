@@ -37,11 +37,17 @@ public class PinController {
 			LOGGER.severe("Account is required");
 			return "{\"error\":\"account is required\"}";
 		}
+
+		pin.setCreateIp(request.getRemoteAddr());
 		
 		if (pin.getAccount().equals("")) {
 			LOGGER.severe("Invalid account");
 			return "{\"error\":\"invalid account\"}";
 		}
+
+		if(pin.getCreateUser() == null) return "{\"error\":\"create user is required\"}";
+
+		if(pin.getCreateUser().equals("")) return "{\"error\":\"empty create user\"}";
 
 		String ipAddress = request.getRemoteAddr();
 		pin.setCreateIp(ipAddress);
@@ -63,6 +69,9 @@ public class PinController {
 		pin.setExpireTimestamp(expireDate);
 		LOGGER.info("Expire Date: " + expireDate);
 		
+		pin.setCreateTimestamp(Utils.getCurrentDate());
+		pin.setExpireTimestamp(Utils.getExpireDate());
+
 		Pin returnPin = repository.save(pin);
         LOGGER.info(ipAddress + " generated " + generatedPin + " on " + currentDate + " with an expiration date of " + expireDate);
 		
@@ -97,6 +106,10 @@ public class PinController {
             return "{\"error\":\"pin not in correct format\"}";
         }
 
+		if(pin.getClaimUser() == null) return "{\"error\":\"claim user is required\"}";	// Make sure they include the creating user
+
+		if(pin.getClaimUser().equals("")) return "{\"error\":\"empty claim user\"}";	// Make sure they input something for the creating user
+
 		List<Pin> inAcct = repository.findPinsByAccount(pin.getAccount());
 		Date curDate = new Date();
 
@@ -112,7 +125,7 @@ public class PinController {
 				if(equalPin.getClaimIp() == null || equalPin.getClaimIp().equals("")) {
 					equalPin.setClaimTimestamp(curDate);
 					equalPin.setClaimIp(request.getRemoteAddr());
-					equalPin.setClaimUser(pin.getCreateUser());
+					equalPin.setClaimUser(pin.getClaimUser());
 					repository.save(equalPin);
                     LOGGER.info("The PIN has been successfully claimed");
 					return "{\"success\":\"The pin has been successfully claimed\"}";
