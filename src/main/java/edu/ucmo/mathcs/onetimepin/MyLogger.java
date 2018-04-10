@@ -14,10 +14,12 @@ public class MyLogger {
     /*static private FileHandler fileHTML;
     static private Formatter formatterHTML;*/
 
-    static public void setup() throws IOException {
+    static Logger logger;
+
+    public static void setup() throws IOException {
 
         // get the global logger to configure it
-        Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+        logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
         logger.setLevel(Level.INFO);
         fileTxt = new FileHandler("Logging.txt", true);

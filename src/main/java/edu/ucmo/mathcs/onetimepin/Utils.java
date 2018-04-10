@@ -21,14 +21,14 @@ public class Utils {
 		return pin + calculateCheckDigit(pin);
 	}
 	
-	public static Date getCurrentDate() {
+	public synchronized static Date getCurrentDate() {
 		Date date = new Date();
 		c.setTime(date);
 		
 		return date;
 	}
 	
-	public static Date getExpireDate() {
+	public synchronized static Date getExpireDate() {
 		c.add(Calendar.MINUTE, EXPIRE_TIME);
 		
 		return c.getTime();
