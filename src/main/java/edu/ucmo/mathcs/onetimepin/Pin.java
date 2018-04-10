@@ -122,7 +122,7 @@ public class Pin {
 	}
 
 	@Override public boolean equals(Object inputPin) {
-		if(inputPin != null && inputPin instanceof Pin)
+		if(inputPin instanceof Pin)
 			return ((Pin) inputPin).pin.equals(this.pin);
 		else
 			return false;
