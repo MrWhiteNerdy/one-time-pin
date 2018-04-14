@@ -15,8 +15,8 @@ import java.util.logging.Logger;
 @RestController
 @RequestMapping(path = "/api")
 public class PinController {
-
-	private final static Logger LOGGER = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+	
+	private final static Logger LOGGER = Logger.getLogger(PinController.class.getName());
 	
 	@Autowired
 	private PinRepository repository;
@@ -24,56 +24,45 @@ public class PinController {
 	@PostMapping(path = "/generate", produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody
 	String addPin(@RequestBody(required = false) Pin pin, HttpServletRequest request) {
-		try {
-			MyLogger.setup();
-		} catch (IOException e) {
-			e.printStackTrace();
-			throw new RuntimeException("Problems with creating the log files");
-		}
-
-        LOGGER.setLevel(Level.ALL);
-
 		if (pin == null || pin.getAccount() == null) {
 			LOGGER.severe("Account is required");
 			return "{\"error\":\"account is required\"}";
 		}
-
-		pin.setCreateIp(request.getRemoteAddr());
 		
 		if (pin.getAccount().equals("")) {
-			LOGGER.severe("Invalid account");
-			return "{\"error\":\"invalid account\"}";
+			LOGGER.severe("Empty account");
+			return "{\"error\":\"account cannot be empty\"}";
 		}
-
-		if(pin.getCreateUser() == null) return "{\"error\":\"create user is required\"}";
-
-		if(pin.getCreateUser().equals("")) return "{\"error\":\"empty create user\"}";
-
+		
+		if (pin.getCreateUser() == null) {
+			LOGGER.severe("Create user is required");
+			return "{\"error\":\"create user is required\"}";
+		}
+		
+		if (pin.getCreateUser().equals("")) {
+			LOGGER.severe("Empty create user");
+			return "{\"error\":\"create user cannot be empty\"}";
+		}
+		
 		String ipAddress = request.getRemoteAddr();
 		pin.setCreateIp(ipAddress);
-		LOGGER.info("IP Address: " + ipAddress);
-
-        String generatedPin = Utils.generatePin();
+		
 		try {
-			pin.setPin(generatedPin);
-            LOGGER.info("PIN: " + generatedPin);
+			pin.setPin(Utils.generatePin());
 		} catch (DataIntegrityViolationException e) {
-			pin.setPin(generatedPin);
-            LOGGER.info("PIN: " + generatedPin);
+			pin.setPin(Utils.generatePin());
 		}
-
+		
 		Date currentDate = Utils.getCurrentDate();
 		pin.setCreateTimestamp(currentDate);
-		LOGGER.info("Current Date: " + currentDate);
-        Date expireDate = Utils.getExpireDate();
-		pin.setExpireTimestamp(expireDate);
-		LOGGER.info("Expire Date: " + expireDate);
 		
-		pin.setCreateTimestamp(Utils.getCurrentDate());
-		pin.setExpireTimestamp(Utils.getExpireDate());
-
+		Date expireDate = Utils.getExpireDate();
+		pin.setExpireTimestamp(expireDate);
+		
 		Pin returnPin = repository.save(pin);
-        LOGGER.info(ipAddress + " generated " + generatedPin + " on " + currentDate + " with an expiration date of " + expireDate);
+		
+		LOGGER.info("User " + pin.getCreateUser() + " at IP address " + request.getRemoteAddr() + " generated pin "
+				+ returnPin.getPin() + " on " + currentDate + " with an expiration date of " + expireDate);
 		
 		return "{\"pin\":\"" + returnPin.getPin() + "\"}";
 	}
@@ -81,62 +70,75 @@ public class PinController {
 	@PostMapping(path = "/claim", produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody
 	String claimPin(@RequestBody(required = false) Pin pin, HttpServletRequest request) {
-	    if(pin == null || pin.getAccount() == null) {
-            LOGGER.severe("Account is required");
-            return "{\"error\":\"account is required\"}";  // See if they include the account in the function call
-        }
-
-        if(pin.getAccount().equals("")) {
-            LOGGER.severe("Empty account");
-            return "{\"error\":\"empty account\"}";   // Make sure they input something for the account
-        }
-
-        if(pin.getPin() == null) {
-            LOGGER.severe("PIN is required");
-            return "{\"error\":\"pin is required\"}";       // See if they include the pin in the function call
-        }
-
-        if(pin.getPin().equals("")) {
-            LOGGER.severe("Empty PIN");
-            return "{\"error\":\"empty pin\"}";        // Make sure they input something for the pin
-        }
-
-        if (!Utils.luhnCheck(pin.getPin())) {
-            LOGGER.severe("PIN not in correct format");
-            return "{\"error\":\"pin not in correct format\"}";
-        }
-
-		if(pin.getClaimUser() == null) return "{\"error\":\"claim user is required\"}";	// Make sure they include the creating user
-
-		if(pin.getClaimUser().equals("")) return "{\"error\":\"empty claim user\"}";	// Make sure they input something for the creating user
-
+		if (pin == null || pin.getAccount() == null) {
+			LOGGER.severe("Account is required");
+			return "{\"error\":\"account is required\"}";
+		}
+		
+		if (pin.getAccount().equals("")) {
+			LOGGER.severe("Empty account");
+			return "{\"error\":\"account cannot be empty\"}";
+		}
+		
+		if (pin.getPin() == null) {
+			LOGGER.severe("Pin is required");
+			return "{\"error\":\"pin is required\"}";
+		}
+		
+		if (pin.getPin().equals("")) {
+			LOGGER.severe("Empty pin");
+			return "{\"error\":\"pin cannot be empty\"}";
+		}
+		
+		if (!Utils.luhnCheck(pin.getPin())) {
+			LOGGER.severe("Pin not in correct format");
+			return "{\"error\":\"pin not in correct format\"}";
+		}
+		
+		if (pin.getClaimUser() == null) {
+			LOGGER.severe("Claim user is required");
+			return "{\"error\":\"claim user is required\"}";
+		}
+		
+		if (pin.getClaimUser().equals("")) {
+			LOGGER.severe("Empty claim user");
+			return "{\"error\":\"claim user cannot be empty\"}";
+		}
+		
 		List<Pin> inAcct = repository.findPinsByAccount(pin.getAccount());
 		Date curDate = new Date();
-
-		if (inAcct.contains(pin)) { // Requested pin is valid for this account
+		
+		if (inAcct.contains(pin)) {
 			Pin equalPin = new Pin();
-			for(Pin loopPin : inAcct) {
-				if(loopPin.getPin().equals(pin.getPin())) {
+			for (Pin loopPin : inAcct) {
+				if (loopPin.getPin().equals(pin.getPin())) {
 					equalPin = loopPin;
 					break;
 				}
 			}
-			if (equalPin.getExpireTimestamp().after(curDate)) { // Expire time is after the current time.
-				if(equalPin.getClaimIp() == null || equalPin.getClaimIp().equals("")) {
+			
+			if (equalPin.getExpireTimestamp().after(curDate)) {
+				if (equalPin.getClaimIp() == null || equalPin.getClaimIp().equals("")) {
 					equalPin.setClaimTimestamp(curDate);
 					equalPin.setClaimIp(request.getRemoteAddr());
 					equalPin.setClaimUser(pin.getClaimUser());
 					repository.save(equalPin);
-                    LOGGER.info("The PIN has been successfully claimed");
-					return "{\"success\":\"The pin has been successfully claimed\"}";
-				} else
-                    LOGGER.severe("The requested PIN has already been claimed");
-					return "{\"error\":\"The requested pin has already been claimed\"}";
-			} else
-                LOGGER.severe("The requested PIN was valid but has expired");
-				return "{\"error\":\"The requested pin was valid but has expired\"}";
-		} else
-		    LOGGER.severe("The requested PIN was invalid");
-			return "{\"error\":\"The requested pin was invalid\"}";
+					
+					LOGGER.info("Pin " + equalPin.getPin() + " has been successfully claimed by "
+							+ equalPin.getClaimUser() + " on " + equalPin.getClaimTimestamp());
+					return "{\"success\":\"pin has been successfully claimed\"}";
+				} else {
+					LOGGER.severe("Requested pin " + pin.getPin() + " has already been claimed");
+					return "{\"error\":\"requested pin has already been claimed\"}";
+				}
+			} else {
+				LOGGER.severe("Requested pin " + pin.getPin() + " was valid but has expired");
+				return "{\"error\":\"requested pin was valid but has expired\"}";
+			}
+		} else {
+			LOGGER.severe("Requested pin " + pin.getPin() + " was invalid");
+			return "{\"error\":\"requested pin was invalid\"}";
+		}
 	}
+	
 }
