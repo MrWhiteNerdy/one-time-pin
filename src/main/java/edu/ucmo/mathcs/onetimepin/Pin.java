@@ -70,7 +70,7 @@ public class Pin {
 	}
 	
 	public void setCreateTimestamp(Date createTimestamp) {
-		this.createTimestamp = createTimestamp;
+		this.createTimestamp = new Date(createTimestamp.getTime());
 	}
 	
 	public String getCreateIp() {
@@ -94,7 +94,7 @@ public class Pin {
 	}
 	
 	public void setExpireTimestamp(Date expireTimestamp) {
-		this.expireTimestamp = expireTimestamp;
+		this.expireTimestamp = new Date(expireTimestamp.getTime());
 	}
 	
 	public Date getClaimTimestamp() {
@@ -102,7 +102,7 @@ public class Pin {
 	}
 	
 	public void setClaimTimestamp(Date claimTimestamp) {
-		this.claimTimestamp = claimTimestamp;
+		this.claimTimestamp = new Date(claimTimestamp.getTime());
 	}
 	
 	public String getClaimUser() {
@@ -122,7 +122,7 @@ public class Pin {
 	}
 
 	@Override public boolean equals(Object inputPin) {
-		if(inputPin != null && inputPin instanceof Pin)
+		if(inputPin instanceof Pin)
 			return ((Pin) inputPin).pin.equals(this.pin);
 		else
 			return false;

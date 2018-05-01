@@ -80,7 +80,7 @@ public class PinControllerTests {
 		
 		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
 		
-		String expected = "{\"error\":\"invalid account\"}";
+		String expected = "{\"error\":\"account cannot be empty\"}";
 		
 		JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
 	}
@@ -120,7 +120,7 @@ public class PinControllerTests {
 
 		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
 
-		String expected = "{\"error\":\"empty create user\"}";
+		String expected = "{\"error\":\"create user cannot be empty\"}";
 
 		JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
 	}
@@ -188,7 +188,7 @@ public class PinControllerTests {
 
 		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
 
-		String expected = "{\"error\":\"empty account\"}";
+		String expected = "{\"error\":\"account cannot be empty\"}";
 
 		JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
 	}
@@ -218,7 +218,7 @@ public class PinControllerTests {
 
 		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
 
-		String expected = "{\"error\":\"empty pin\"}";
+		String expected = "{\"error\":\"pin cannot be empty\"}";
 
 		JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
 	}
@@ -253,7 +253,7 @@ public class PinControllerTests {
 
 		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
 
-		String expected = "{\"error\":\"The requested pin was invalid\"}";
+		String expected = "{\"error\":\"requested pin was invalid\"}";
 
 		JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
 	}
@@ -278,7 +278,7 @@ public class PinControllerTests {
 
 		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
 
-		String expected = "{\"error\":\"The requested pin was valid but has expired\"}";
+		String expected = "{\"error\":\"requested pin was valid but has expired\"}";
 
 		JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
 	}
@@ -304,7 +304,7 @@ public class PinControllerTests {
 
 		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
 
-		String expected = "{\"error\":\"The requested pin has already been claimed\"}";
+		String expected = "{\"error\":\"requested pin has already been claimed\"}";
 
 		JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
 	}
@@ -354,7 +354,7 @@ public class PinControllerTests {
 
 		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
 
-		String expected = "{\"error\":\"empty claim user\"}";
+		String expected = "{\"error\":\"claim user cannot be empty\"}";
 
 		JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
 	}
@@ -397,7 +397,7 @@ public class PinControllerTests {
 								.description("The success message"))))
 				.andReturn();
 
-		String expected = "{\"success\":\"The pin has been successfully claimed\"}";
+		String expected = "{\"success\":\"pin has been successfully claimed\"}";
 
 		JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
 	}
